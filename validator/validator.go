@@ -2,8 +2,9 @@ package validator
 
 import (
 	"fib/models"
-	"github.com/gofiber/fiber/v2"
 	"strings"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // UserValidator validates the request body for models.User
@@ -20,11 +21,8 @@ func UserValidator(model *models.User) fiber.Handler {
 		// Validate the fields
 		errors := make(map[string]string)
 
-		if len(strings.TrimSpace(model.FirstName)) < 5 {
+		if len(strings.TrimSpace(model.Name)) < 5 {
 			errors["first_name"] = "First name must be at least 5 characters long"
-		}
-		if len(strings.TrimSpace(model.LastName)) < 5 {
-			errors["last_name"] = "Last name must be at least 5 characters long"
 		}
 		if len(strings.TrimSpace(model.Password)) < 8 {
 			errors["password"] = "Password must be at least 8 characters long"

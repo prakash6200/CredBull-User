@@ -18,7 +18,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// Validate required fields
-	if user.FirstName == "" || user.LastName == "" {
+	if user.Name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "First name and last name are required",
 		})
@@ -46,7 +46,7 @@ func SignUp(c *fiber.Ctx) error {
 	}
 
 	// Validate required fields
-	if user.FirstName == "" || user.LastName == "" || user.Password == "" {
+	if user.Name == "" || user.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  false,
 			"message": "First name, last name, and password are required",
@@ -90,7 +90,7 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	// Validate required fields
-	if loginRequest.FirstName == "" || loginRequest.Password == "" {
+	if loginRequest.Name == "" || loginRequest.Password == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  false,
 			"message": "First name and password are required",
@@ -99,7 +99,7 @@ func Login(c *fiber.Ctx) error {
 
 	// Retrieve user from database
 	var user models.User
-	if result := database.Database.Db.Where("first_name = ?", loginRequest.FirstName).First(&user); result.Error != nil {
+	if result := database.Database.Db.Where("first_name = ?", loginRequest.Name).First(&user); result.Error != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"status":  false,
 			"message": "Invalid credentials",
@@ -115,7 +115,7 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	// Generate JWT token
-	token, err := jwt.GenerateJWT(user.ID, user.FirstName)
+	token, err := jwt.GenerateJWT(user.ID, user.Name)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  false,

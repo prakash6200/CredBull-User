@@ -18,7 +18,7 @@ var Database DbInstance
 
 func ConnectDb() {
 
-	dbName := "test.db"
+	dbName := "credUser.db"
 
 	// Open database connection
 	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
