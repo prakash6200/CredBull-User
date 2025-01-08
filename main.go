@@ -3,31 +3,36 @@ package main
 import (
 	"fib/config"
 	"fib/database"
-	"fib/routers"
+	"fib/routers/userRoutes"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func welcome(c *fiber.Ctx) error {
-	return c.SendString("Welcome to an Awesome API")
-}
-
 func main() {
-	// Load configuration
 	config.LoadConfig()
-
-	// Connect to the database
 	database.ConnectDb()
 
-	// Initialize Fiber app
 	app := fiber.New()
 
-	// Setup routes
-	app.Get("/", welcome)
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowMethods: "GET,POST,PUT,DELETE",        // Allowed HTTP methods
+		AllowHeaders: "Content-Type,Authorization", // Allowed headers
+	}))
+
+	// Enable the built-in logger middleware to log all requests
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${ip} ${method} ${path} ${status} ${latency}\n",
+	}))
+
+	// Serve static files from the public folder
+	app.Static("/", "./public")
+
 	routers.SetupUserRoutes(app)
 
-	// Start the server
 	log.Printf("Server is running on port %s", config.AppConfig.Port)
 	log.Fatal(app.Listen(":" + config.AppConfig.Port))
 }

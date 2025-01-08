@@ -35,6 +35,10 @@ func LoadConfig() {
 	if AppConfig.JWTKey == "defaultSecret" {
 		log.Println("Warning: Using default JWT_SECRET_KEY. Update it in your environment.")
 	}
+	if AppConfig.DBName == "credUser.db" {
+		log.Println("Warning: Using default DBName. Update it in your environment.")
+	}
+
 }
 
 // getEnv retrieves an environment variable or returns a default value
