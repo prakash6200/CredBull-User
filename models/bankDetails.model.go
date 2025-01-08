@@ -13,6 +13,6 @@ type BankDetails struct {
 	IFSCCode    string `gorm:"default:''"`
 	BranchName  string `gorm:"default:''"`
 	AccountType string `gorm:"type:text;default:'savings'"`
-	UserID      uint   `gorm:"not null"`          // Foreign key
-	User        User   `gorm:"foreignKey:UserID"` // Association with User
+	UserID      uint   `gorm:"foreignKey:UserID"` // Correcting foreign key reference
+	IsDeleted   bool   `gorm:"default:false"`
 }

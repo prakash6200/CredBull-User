@@ -1,24 +1,28 @@
 package database
 
 import (
+	"fib/config"
+	"fib/models"
 	"log"
 	"os"
 
-	"fib/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
+// DbInstance struct holds the database connection instance
 type DbInstance struct {
 	Db *gorm.DB
 }
 
+// Database is the global database instance
 var Database DbInstance
 
+// ConnectDb establishes a connection to the database
 func ConnectDb() {
-
-	dbName := "credUser.db"
+	// Get database name from configuration
+	dbName := config.AppConfig.DBName
 
 	// Open database connection
 	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
@@ -27,23 +31,24 @@ func ConnectDb() {
 		os.Exit(2)
 	}
 
-	log.Println("Connected Successfully to Database")
+	log.Printf("Connected Successfully to Database: %s\n", dbName)
 
-	// Set GORM logger
+	// Set GORM logger to Info mode
 	db.Logger = logger.Default.LogMode(logger.Info)
 
-	// Run migrations
+	// Run database migrations
 	runMigrations(db)
 
-	// Save database instance
+	// Save database instance globally
 	Database = DbInstance{
 		Db: db,
 	}
 }
 
+// runMigrations performs database migrations
 func runMigrations(db *gorm.DB) {
 	log.Println("Running Migrations")
-	if err := db.AutoMigrate(&models.User{}, &models.Product{}, &models.Order{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.BankDetails{}, &models.UserKYC{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 }

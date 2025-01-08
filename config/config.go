@@ -1,55 +1,47 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
-// Config struct to hold all the environment variables
+// Config holds application configuration
 type Config struct {
-	Port             string
-	GRPCUrl          string
-	GRPCUserUrl      string
-	GRPCWalletUrl    string
-	RedisUrl         string
-	DatabaseUri      string
-	FrontUrl         string
-	BaseUrl          string
-	AdminUrl         string
-	BinanceApiKey    string
-	BinanceSecretKey string
-	CoinDCXApiKey    string
-	CoinDCXSecretKey string
-	JwtSecretKey     string
+	Port   string
+	DBName string
+	JWTKey string
 }
 
-// Global variable to hold the configuration
+// AppConfig is a global variable to access configuration
 var AppConfig *Config
 
-// LoadConfig loads environment variables from the .env file
+// LoadConfig initializes configuration from environment variables or defaults
 func LoadConfig() {
-	// Load the .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found. Using system environment variables.")
 	}
 
 	// Initialize AppConfig with values from environment variables
 	AppConfig = &Config{
-		Port:             os.Getenv("PORT"),
-		GRPCUrl:          os.Getenv("GRPC_URL"),
-		GRPCUserUrl:      os.Getenv("GRPC_USER_URL"),
-		GRPCWalletUrl:    os.Getenv("GRPC_WALLET_URL"),
-		RedisUrl:         os.Getenv("REDIS_URL"),
-		DatabaseUri:      os.Getenv("DATABASE_URI"),
-		FrontUrl:         os.Getenv("FRONT_URL"),
-		BaseUrl:          os.Getenv("BASE_URL"),
-		AdminUrl:         os.Getenv("ADMIN_URL"),
-		BinanceApiKey:    os.Getenv("BINANCE_API_KEY"),
-		BinanceSecretKey: os.Getenv("BINANCE_SECRET_KEY"),
-		CoinDCXApiKey:    os.Getenv("COINDCX_API_KEY"),
-		CoinDCXSecretKey: os.Getenv("COINDCX_SECRET_KEY"),
-		JwtSecretKey:     os.Getenv("JWT_SECRET_KEY"),
+		Port:   getEnv("PORT", "3000"),
+		DBName: getEnv("DB_NAME", "credUser.db"),
+		JWTKey: getEnv("JWT_SECRET_KEY", "defaultSecret"),
 	}
+
+	// Validate critical configuration
+	if AppConfig.JWTKey == "defaultSecret" {
+		log.Println("Warning: Using default JWT_SECRET_KEY. Update it in your environment.")
+	}
+}
+
+// getEnv retrieves an environment variable or returns a default value
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

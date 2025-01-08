@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fib/config"
 	"fib/database"
 	"fib/routers"
 	"log"
@@ -13,13 +14,20 @@ func welcome(c *fiber.Ctx) error {
 }
 
 func main() {
+	// Load configuration
+	config.LoadConfig()
+
+	// Connect to the database
 	database.ConnectDb()
 
+	// Initialize Fiber app
 	app := fiber.New()
-	app.Get("/", welcome)
 
 	// Setup routes
+	app.Get("/", welcome)
 	routers.SetupUserRoutes(app)
 
-	log.Fatal(app.Listen(":3000"))
+	// Start the server
+	log.Printf("Server is running on port %s", config.AppConfig.Port)
+	log.Fatal(app.Listen(":" + config.AppConfig.Port))
 }
