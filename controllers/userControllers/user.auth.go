@@ -90,6 +90,7 @@ func Signup(c *fiber.Ctx) error {
 
 	// Remove the password from the response for security
 	user.Password = ""
+	user.UserKYC = models.UserKYC{}
 
 	// Return the created user
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
