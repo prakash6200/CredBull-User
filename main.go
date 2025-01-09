@@ -3,7 +3,7 @@ package main
 import (
 	"fib/config"
 	"fib/database"
-	"fib/routers/userRoutes"
+	routers "fib/routers/userRoutes"
 	"log"
 
 	"github.com/gofiber/fiber/v2"

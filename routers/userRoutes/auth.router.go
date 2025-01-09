@@ -1,8 +1,8 @@
 package routers
 
 import (
-	controllers "fib/controllers/userControllers"
-	validator "fib/validator/userValidator"
+	controllers "fib/controllers/auth"
+	validators "fib/validators/auth"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -10,6 +10,6 @@ import (
 func SetupUserRoutes(app *fiber.App) {
 	userGroup := app.Group("/user")
 
-	userGroup.Post("/signup", validator.Signup(), controllers.Signup)
-	userGroup.Post("/login", validator.Login(), controllers.Login)
+	userGroup.Post("/signup", validators.Signup(), controllers.Signup)
+	userGroup.Post("/login", validators.Login(), controllers.Login)
 }

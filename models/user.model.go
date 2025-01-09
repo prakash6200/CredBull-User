@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -11,11 +13,12 @@ type User struct {
 	Name             string        `gorm:"default:''"`
 	Email            string        `gorm:"unique;not null"`
 	Mobile           string        `gorm:"default:''"`
-	Role             string        `gorm:"default:'savings'"`
+	Role             string        `gorm:"default:'USER'"` // Default role is USER
 	Password         string        `gorm:"not null"`
 	BankDetails      []BankDetails `gorm:"foreignKey:UserID"` // Corrected foreign key reference
 	UserKYC          UserKYC       `gorm:"foreignKey:UserID"` // Corrected foreign key reference
 	IsMobileVerified bool          `gorm:"default:false"`
 	IsEmailVerified  bool          `gorm:"default:false"`
 	IsDeleted        bool          `gorm:"default:false"`
+	LastLogin        time.Time     `gorm:"default:NULL"`
 }
