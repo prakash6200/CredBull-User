@@ -5,6 +5,7 @@ import (
 	"fib/database"
 	"fib/middleware"
 	"fib/models"
+	"fib/utils"
 	"log"
 	"math/big"
 	"time"
@@ -155,5 +156,67 @@ func Login(c *fiber.Ctx) error {
 	return middleware.JsonResponse(c, fiber.StatusOK, true, "Login successful.", fiber.Map{
 		"user":  user,
 		"token": token,
+	})
+}
+
+func SendOTP(c *fiber.Ctx) error {
+	reqData := new(struct {
+		Mobile string `json:"mobile"`
+		Email  string `json:"email"`
+	})
+
+	if err := c.BodyParser(reqData); err != nil {
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Failed to parse request body!", nil)
+	}
+
+	// Validate that either email or mobile is provided
+	if reqData.Email == "" && reqData.Mobile == "" {
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Either email or mobile number is required!", nil)
+	}
+
+	// Check if email or mobile is already verified
+	var user models.User
+	var result *gorm.DB
+
+	if reqData.Email != "" {
+		result = database.Database.Db.Where("email = ? AND is_deleted = ?", reqData.Email, false).First(&user)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid email credentials!", nil)
+		}
+		if user.IsEmailVerified {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Email already verified!", nil)
+		}
+	} else {
+		result = database.Database.Db.Where("mobile = ? AND is_deleted = ?", reqData.Mobile, false).First(&user)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid mobile credentials!", nil)
+		}
+		if user.IsMobileVerified {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Mobile already verified!", nil)
+		}
+	}
+
+	// Generate OTP
+	otp := utils.GenerateOTP()
+
+	// Set OTP expiration time (e.g., 5 minutes from now)
+	expiresAt := time.Now().Add(5 * time.Minute)
+
+	// Create OTP record
+	otpRecord := models.OTP{
+		UserID:    user.ID,
+		Email:     reqData.Email,
+		Mobile:    reqData.Mobile,
+		Code:      otp,
+		ExpiresAt: expiresAt,
+	}
+
+	// Save OTP record to the database
+	if err := database.Database.Db.Create(&otpRecord).Error; err != nil {
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to Create OTP!", nil)
+	}
+
+	return middleware.JsonResponse(c, fiber.StatusOK, true, "OTP sent successfully!", fiber.Map{
+		"otp": otp, // In production, do not return the OTP in the response!
 	})
 }

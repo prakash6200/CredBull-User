@@ -2,7 +2,6 @@ package validator
 
 import (
 	"fib/middleware"
-	"fib/models"
 	"regexp"
 	"strings"
 
@@ -24,30 +23,36 @@ func isValidMobile(mobile string) bool {
 // Signup validator middleware
 func Signup() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		user := new(models.User)
-		if err := c.BodyParser(user); err != nil {
+		// user := new(models.User)
+		reqData := new(struct {
+			Mobile   string `json:"mobile"`
+			Email    string `json:"email"`
+			Password string `json:"password"`
+			Name     string `json:"name"`
+		})
+		if err := c.BodyParser(reqData); err != nil {
 			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
 		}
 
 		errors := make(map[string]string)
 
 		// Validate Name
-		if len(strings.TrimSpace(user.Name)) < 5 {
+		if len(strings.TrimSpace(reqData.Name)) < 5 {
 			errors["name"] = "Name must be at least 5 characters long!"
 		}
 
 		// Validate Email
-		if user.Email == "" || !isValidEmail(user.Email) {
+		if reqData.Email == "" || !isValidEmail(reqData.Email) {
 			errors["email"] = "Invalid email!"
 		}
 
 		// Validate Mobile
-		if user.Mobile == "" || !isValidMobile(user.Mobile) {
+		if reqData.Mobile == "" || !isValidMobile(reqData.Mobile) {
 			errors["mobile"] = "Invalid mobile number!"
 		}
 
 		// Validate Password
-		if len(strings.TrimSpace(user.Password)) < 8 {
+		if len(strings.TrimSpace(reqData.Password)) < 8 {
 			errors["password"] = "Password must be at least 8 characters long!"
 		}
 
@@ -57,7 +62,7 @@ func Signup() fiber.Handler {
 		}
 
 		// Pass validated user to the next middleware
-		c.Locals("validatedUser", user)
+		c.Locals("validatedUser", reqData)
 		return c.Next()
 	}
 }
@@ -65,27 +70,31 @@ func Signup() fiber.Handler {
 // Login validator middleware
 func Login() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		loginRequest := new(models.User)
-		if err := c.BodyParser(loginRequest); err != nil {
+		reqData := new(struct {
+			Mobile   string `json:"mobile"`
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		})
+		if err := c.BodyParser(reqData); err != nil {
 			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
 		}
 
 		errors := make(map[string]string)
 
 		// Validate credentials
-		if loginRequest.Email == "" && loginRequest.Mobile == "" {
+		if reqData.Email == "" && reqData.Mobile == "" {
 			errors["credentials"] = "Either email or mobile number is required!"
 		} else {
-			if loginRequest.Email != "" && !isValidEmail(loginRequest.Email) {
+			if reqData.Email != "" && !isValidEmail(reqData.Email) {
 				errors["email"] = "Invalid email!"
 			}
-			if loginRequest.Mobile != "" && !isValidMobile(loginRequest.Mobile) {
+			if reqData.Mobile != "" && !isValidMobile(reqData.Mobile) {
 				errors["mobile"] = "Invalid mobile number!"
 			}
 		}
 
 		// Validate Password
-		if len(strings.TrimSpace(loginRequest.Password)) < 8 {
+		if len(strings.TrimSpace(reqData.Password)) < 8 {
 			errors["password"] = "Password must be at least 8 characters long!"
 		}
 
@@ -95,7 +104,44 @@ func Login() fiber.Handler {
 		}
 
 		// Pass validated login request to the next middleware
-		c.Locals("validatedUser", loginRequest)
+		c.Locals("validatedUser", reqData)
+		return c.Next()
+	}
+}
+
+// SendOTP validator middleware
+func SendOTP() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		reqData := new(struct {
+			Mobile string `json:"mobile"`
+			Email  string `json:"email"`
+		})
+
+		if err := c.BodyParser(reqData); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
+		}
+
+		errors := make(map[string]string)
+
+		// Validate credentials
+		if reqData.Email == "" && reqData.Mobile == "" {
+			errors["credentials"] = "Either email or mobile number is required!"
+		} else {
+			if reqData.Email != "" && !isValidEmail(reqData.Email) {
+				errors["email"] = "Invalid email!"
+			}
+			if reqData.Mobile != "" && !isValidMobile(reqData.Mobile) {
+				errors["mobile"] = "Invalid mobile number!"
+			}
+		}
+
+		// Respond with errors if any exist
+		if len(errors) > 0 {
+			return middleware.ValidationErrorResponse(c, errors)
+		}
+
+		// Pass validated login request to the next middleware
+		c.Locals("validatedUser", reqData)
 		return c.Next()
 	}
 }
