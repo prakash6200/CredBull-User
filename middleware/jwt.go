@@ -15,11 +15,11 @@ var jwtSecret = []byte("asdfasqsdfgsdasdfasdfawqe") // Replace with your actual 
 func GenerateJWT(userID uint, name, role string) (string, error) {
 	// Set claims
 	claims := jwt.MapClaims{
-		"sub":  userID,                                // Subject (User ID)
-		"name": name,                                  // Name of the user
-		"role": role,                                  // User role
-		"iat":  time.Now().Unix(),                     // Issued at (current timestamp)
-		"exp":  time.Now().Add(24 * time.Hour).Unix(), // Expiry (24 hours from now)
+		"userId": userID,                                // User ID
+		"name":   name,                                  // Name of the user
+		"role":   role,                                  // User role
+		"iat":    time.Now().Unix(),                     // Issued at (current timestamp)
+		"exp":    time.Now().Add(24 * time.Hour).Unix(), // Expiry (24 hours from now)
 	}
 
 	// Create the token
@@ -67,6 +67,19 @@ func JWTMiddleware(c *fiber.Ctx) error {
 			"message": "Invalid or expired token",
 		})
 	}
+
+	// Extract user ID from the token claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["userId"] == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  false,
+			"message": "Invalid token payload",
+		})
+	}
+
+	// Set the user ID in the request context
+	userID := claims["userId"].(float64) // JWT claims are typically stored as `float64`, so cast it
+	c.Locals("userId", uint(userID))     // Store userID in context as uint
 
 	// If valid, continue to the next handler
 	return c.Next()

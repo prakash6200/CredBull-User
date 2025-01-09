@@ -193,3 +193,31 @@ func VerifyOTP() fiber.Handler {
 		return c.Next()
 	}
 }
+
+// ResetPassword validator middleware
+func ResetPassword() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		reqData := new(struct {
+			Password string `json:"password"`
+		})
+		if err := c.BodyParser(reqData); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
+		}
+
+		errors := make(map[string]string)
+
+		// Validate Password
+		if len(strings.TrimSpace(reqData.Password)) < 8 {
+			errors["password"] = "Password must be at least 8 characters long!"
+		}
+
+		// Respond with errors if any exist
+		if len(errors) > 0 {
+			return middleware.ValidationErrorResponse(c, errors)
+		}
+
+		// Pass validated login request to the next middleware
+		c.Locals("validatedUser", reqData)
+		return c.Next()
+	}
+}
