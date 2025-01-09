@@ -145,3 +145,51 @@ func SendOTP() fiber.Handler {
 		return c.Next()
 	}
 }
+
+// VerifyOTP validates OTP request data
+func VerifyOTP() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		reqData := new(struct {
+			Mobile string `json:"mobile"`
+			Email  string `json:"email"`
+			Code   string `json:"code"`
+		})
+
+		// Parse the request body into reqData
+		if err := c.BodyParser(reqData); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
+		}
+
+		// Initialize a map to collect validation errors
+		errors := make(map[string]string)
+
+		// Validate that either email or mobile is provided
+		if reqData.Email == "" && reqData.Mobile == "" {
+			errors["credentials"] = "Either email or mobile number is required!"
+		} else {
+			// Validate email if provided
+			if reqData.Email != "" && !isValidEmail(reqData.Email) {
+				errors["email"] = "Invalid email!"
+			}
+
+			// Validate mobile number if provided
+			if reqData.Mobile != "" && !isValidMobile(reqData.Mobile) {
+				errors["mobile"] = "Invalid mobile number!"
+			}
+		}
+
+		// Validate OTP code
+		if reqData.Code == "" {
+			errors["code"] = "OTP code is required!"
+		}
+
+		// If validation errors exist, return them
+		if len(errors) > 0 {
+			return middleware.ValidationErrorResponse(c, errors)
+		}
+
+		// Store validated data and pass to the next middleware
+		c.Locals("validatedUser", reqData)
+		return c.Next()
+	}
+}

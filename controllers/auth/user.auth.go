@@ -103,14 +103,6 @@ func Login(c *fiber.Ctx) error {
 		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Failed to parse request body!", nil)
 	}
 
-	if reqData.Password == "" {
-		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Password is required!", nil)
-	}
-
-	if reqData.Email == "" && reqData.Mobile == "" {
-		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Either email or mobile number is required!", nil)
-	}
-
 	var user models.User
 	var result *gorm.DB
 
@@ -169,11 +161,6 @@ func SendOTP(c *fiber.Ctx) error {
 		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Failed to parse request body!", nil)
 	}
 
-	// Validate that either email or mobile is provided
-	if reqData.Email == "" && reqData.Mobile == "" {
-		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Either email or mobile number is required!", nil)
-	}
-
 	// Check if email or mobile is already verified
 	var user models.User
 	var result *gorm.DB
@@ -216,7 +203,74 @@ func SendOTP(c *fiber.Ctx) error {
 		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to Create OTP!", nil)
 	}
 
-	return middleware.JsonResponse(c, fiber.StatusOK, true, "OTP sent successfully!", fiber.Map{
-		"otp": otp, // In production, do not return the OTP in the response!
+	return middleware.JsonResponse(c, fiber.StatusOK, true, "OTP sent successfully.", nil)
+}
+
+func VerifyOTP(c *fiber.Ctx) error {
+	reqData := new(struct {
+		Mobile string `json:"mobile"`
+		Email  string `json:"email"`
+		Code   string `json:"code"`
 	})
+
+	// Parse the request body
+	if err := c.BodyParser(reqData); err != nil {
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Failed to parse request body!", nil)
+	}
+
+	var user models.User
+	var otpRecord models.OTP
+	var result *gorm.DB
+
+	// Retrieve user and OTP record based on email or mobile
+	if reqData.Email != "" {
+		// Find user by email
+		result = database.Database.Db.Where("email = ? AND is_deleted = ?", reqData.Email, false).First(&user)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "User not found!", nil)
+		}
+
+		// Find the OTP record for the email
+		result = database.Database.Db.Where("email = ? AND code = ? AND is_used = ? AND is_deleted = ?", reqData.Email, reqData.Code, false, false).First(&otpRecord)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid OTP or OTP expired!", nil)
+		}
+	} else {
+		// Find user by mobile
+		result = database.Database.Db.Where("mobile = ? AND is_deleted = ?", reqData.Mobile, false).First(&user)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "User not found!", nil)
+		}
+
+		// Find the OTP record for the mobile
+		result = database.Database.Db.Where("mobile = ? AND code = ? AND is_used = ? AND is_deleted = ?", reqData.Mobile, reqData.Code, false, false).First(&otpRecord)
+		if result.Error != nil {
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid OTP or OTP expired!", nil)
+		}
+	}
+
+	// Check if OTP has expired
+	if otpRecord.ExpiresAt.Before(time.Now()) {
+		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "OTP has expired!", nil)
+	}
+
+	// Mark OTP as used
+	otpRecord.IsUsed = true
+	if err := database.Database.Db.Save(&otpRecord).Error; err != nil {
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to update OTP status!", nil)
+	}
+
+	// Update user's verification status based on email or mobile
+	if reqData.Email != "" {
+		user.IsEmailVerified = true
+	} else {
+		user.IsMobileVerified = true
+	}
+
+	// Save updated user verification status
+	if err := database.Database.Db.Save(&user).Error; err != nil {
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to update user verification status!", nil)
+	}
+
+	return middleware.JsonResponse(c, fiber.StatusOK, true, "OTP verified successfully!", nil)
 }

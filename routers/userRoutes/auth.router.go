@@ -13,4 +13,5 @@ func SetupUserRoutes(app *fiber.App) {
 	userGroup.Post("/signup", validators.Signup(), controllers.Signup)
 	userGroup.Post("/login", validators.Login(), controllers.Login)
 	userGroup.Post("/send/otp", validators.SendOTP(), controllers.SendOTP)
+	userGroup.Patch("/verify/otp", validators.VerifyOTP(), controllers.VerifyOTP)
 }
