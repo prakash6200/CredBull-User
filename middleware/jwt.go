@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fib/config"
 	"fmt"
 	"strings"
 	"time"
@@ -9,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-var jwtSecret = []byte("asdfasqsdfgsdasdfasdfawqe") // Replace with your actual secret key
+// var jwtSecret = []byte("asdfasqsdfgsdasdfasdfawqe") // Replace with your actual secret key
 
 // GenerateJWT generates a JWT token for the user
 func GenerateJWT(userID uint, name, role string) (string, error) {
@@ -24,7 +25,7 @@ func GenerateJWT(userID uint, name, role string) (string, error) {
 
 	// Create the token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
+	jwtSecret := []byte(config.AppConfig.JWTKey)
 	// Sign the token with the secret key
 	return token.SignedString(jwtSecret)
 }
@@ -57,6 +58,7 @@ func JWTMiddleware(c *fiber.Ctx) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+		jwtSecret := []byte(config.AppConfig.JWTKey)
 		return jwtSecret, nil
 	})
 

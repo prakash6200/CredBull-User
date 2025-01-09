@@ -3,15 +3,17 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 // Config holds application configuration
 type Config struct {
-	Port   string
-	DBName string
-	JWTKey string
+	Port      string
+	DBName    string
+	JWTKey    string
+	SaltRound int // Updated to int for SaltRound
 }
 
 // AppConfig is a global variable to access configuration
@@ -26,9 +28,10 @@ func LoadConfig() {
 
 	// Initialize AppConfig with values from environment variables
 	AppConfig = &Config{
-		Port:   getEnv("PORT", "3000"),
-		DBName: getEnv("DB_NAME", "credUser.db"),
-		JWTKey: getEnv("JWT_SECRET_KEY", "defaultSecret"),
+		Port:      getEnv("PORT", "3000"),
+		DBName:    getEnv("DB_NAME", "credUser.db"),
+		JWTKey:    getEnv("JWT_SECRET_KEY", "defaultSecret"),
+		SaltRound: getEnvInt("SALT_ROUND", 10), // Parse as integer for SaltRound
 	}
 
 	// Validate critical configuration
@@ -48,4 +51,19 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// getEnvInt retrieves an environment variable as an integer or returns the default integer value
+func getEnvInt(key string, defaultValue int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	// Convert the string to integer
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("Error converting environment variable %s to int: %v", key, err)
+		return defaultValue
+	}
+	return intValue
 }

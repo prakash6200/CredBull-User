@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"crypto/rand"
+	"fib/config"
 	"fib/database"
 	"fib/middleware"
 	"fib/models"
@@ -75,7 +76,7 @@ func Signup(c *fiber.Ctx) error {
 
 	user.ReferralCode = generateReferralCode()
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), config.AppConfig.SaltRound)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
 		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to process your request!", nil)
@@ -410,15 +411,15 @@ func ResetPassword(c *fiber.Ctx) error {
 
 	// Retrieve the user from the database using userId from JWT token
 	var user models.User
-	var result *gorm.DB
-	result = database.Database.Db.Where("id = ? AND is_deleted = ?", userId, false).First(&user)
+
+	result := database.Database.Db.Where("id = ? AND is_deleted = ?", userId, false).First(&user)
 
 	if result.Error != nil {
 		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "User not found or invalid credentials!", nil)
 	}
 
 	// Hash the new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), 10)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqData.Password), config.AppConfig.SaltRound)
 	if err != nil {
 		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to hash password!", nil)
 	}
