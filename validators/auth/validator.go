@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fib/middleware"
 	"fib/models"
 	"regexp"
 	"strings"
@@ -8,25 +9,26 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Helper to validate email format
 func isValidEmail(email string) bool {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return re.MatchString(email)
 }
 
+// Helper to validate mobile number format
 func isValidMobile(mobile string) bool {
 	re := regexp.MustCompile(`^\d{10}$`)
 	return re.MatchString(mobile)
 }
 
+// Signup validator middleware
 func Signup() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Parse the request body into the User model
 		user := new(models.User)
 		if err := c.BodyParser(user); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid request body!")
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
 		}
 
-		// Validate the fields
 		errors := make(map[string]string)
 
 		// Validate Name
@@ -49,47 +51,34 @@ func Signup() fiber.Handler {
 			errors["password"] = "Password must be at least 8 characters long!"
 		}
 
-		// If there are validation errors, return them
+		// Respond with errors if any exist
 		if len(errors) > 0 {
-			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-				"status":  false,
-				"message": "Validation failed!",
-				"errors":  errors,
-			})
+			return middleware.ValidationErrorResponse(c, errors)
 		}
 
-		// Store the validated user in Locals for use in the controller
+		// Pass validated user to the next middleware
 		c.Locals("validatedUser", user)
-
-		// Continue to the next handler
 		return c.Next()
 	}
 }
 
+// Login validator middleware
 func Login() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Parse the request body into the User model
 		loginRequest := new(models.User)
 		if err := c.BodyParser(loginRequest); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"status":  false,
-				"message": "Invalid request body!",
-			})
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
 		}
 
-		// Initialize errors map
 		errors := make(map[string]string)
 
-		// Ensure at least one of email or mobile is provided
+		// Validate credentials
 		if loginRequest.Email == "" && loginRequest.Mobile == "" {
 			errors["credentials"] = "Either email or mobile number is required!"
 		} else {
-			// If email is provided, validate it
 			if loginRequest.Email != "" && !isValidEmail(loginRequest.Email) {
 				errors["email"] = "Invalid email!"
 			}
-
-			// If mobile is provided, validate it
 			if loginRequest.Mobile != "" && !isValidMobile(loginRequest.Mobile) {
 				errors["mobile"] = "Invalid mobile number!"
 			}
@@ -100,19 +89,13 @@ func Login() fiber.Handler {
 			errors["password"] = "Password must be at least 8 characters long!"
 		}
 
-		// If there are validation errors, return them
+		// Respond with errors if any exist
 		if len(errors) > 0 {
-			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-				"status":  false,
-				"message": "Validation failed!",
-				"errors":  errors,
-			})
+			return middleware.ValidationErrorResponse(c, errors)
 		}
 
-		// Store the validated model in Locals for use in the controller
+		// Pass validated login request to the next middleware
 		c.Locals("validatedUser", loginRequest)
-
-		// Continue to the next handler
 		return c.Next()
 	}
 }

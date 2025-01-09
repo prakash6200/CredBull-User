@@ -72,93 +72,14 @@ func JWTMiddleware(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-type CustomErrorHandler struct {
-	Status  bool   `json:"status"`
-	Message string `json:"message"`
-}
-
-// Error implements the error interface for CustomErrorHandler
-func (ceh *CustomErrorHandler) Error() string {
-	return ceh.Message
-}
-
-// New creates a new instance of CustomErrorHandler
-func (ceh *CustomErrorHandler) New(status bool, message string) *CustomErrorHandler {
-	ceh.Status = status
-	ceh.Message = message
-	return ceh
-}
-
-// AlreadyExist creates a "409 Conflict" error
-func (ceh *CustomErrorHandler) AlreadyExist(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// WrongCredentials creates a "401 Unauthorized" error
-func (ceh *CustomErrorHandler) WrongCredentials(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// LowBalance creates a "402 Payment Required" error
-func (ceh *CustomErrorHandler) LowBalance(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// UnAuthorized creates a "401 Unauthorized" error
-func (ceh *CustomErrorHandler) UnAuthorized(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// NotAllowed creates a "403 Forbidden" error
-func (ceh *CustomErrorHandler) NotAllowed(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// NotFound creates a "404 Not Found" error
-func (ceh *CustomErrorHandler) NotFound(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// ServerError creates a "500 Internal Server Error" error
-func (ceh *CustomErrorHandler) ServerError(message string) *CustomErrorHandler {
-	return &CustomErrorHandler{Status: false, Message: message}
-}
-
-// HandleErrorResponse handles the error and returns the proper JSON response
-func HandleErrorResponse(c *fiber.Ctx, err error) error {
-	// If it's a CustomErrorHandler, use its message and status
-	if customErr, ok := err.(*CustomErrorHandler); ok {
-		return c.Status(getStatusCode(customErr.Message)).JSON(fiber.Map{
-			"status":  customErr.Status,
-			"message": customErr.Message,
-			"data":    nil,
-		})
-	}
-
-	// If it's not a CustomErrorHandler, return internal server error
-	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-		"status":  false,
-		"message": "Something went wrong",
-		"data":    nil,
+func JsonResponse(c *fiber.Ctx, statusCode int, status bool, message string, data interface{}) error {
+	return c.Status(statusCode).JSON(fiber.Map{
+		"status":  status,
+		"message": message,
+		"data":    data,
 	})
 }
 
-// Helper function to get appropriate status code for the error message
-func getStatusCode(message string) int {
-	switch message {
-	case "Already exists":
-		return fiber.StatusConflict
-	case "Wrong credentials":
-		return fiber.StatusUnauthorized
-	case "Low balance":
-		return fiber.StatusPaymentRequired
-	case "Unauthorized":
-		return fiber.StatusUnauthorized
-	case "Not allowed":
-		return fiber.StatusForbidden
-	case "Not found":
-		return fiber.StatusNotFound
-	default:
-		return fiber.StatusInternalServerError
-	}
+func ValidationErrorResponse(c *fiber.Ctx, errors map[string]string) error {
+	return JsonResponse(c, fiber.StatusUnprocessableEntity, false, "Validation failed!", errors)
 }

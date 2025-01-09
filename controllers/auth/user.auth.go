@@ -54,30 +54,21 @@ func generateReferralCode() string {
 func Signup(c *fiber.Ctx) error {
 	user := new(models.User)
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  false,
-			"message": "Invalid request body!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
 	}
 
 	// Check if email already exists
 	existingUser := models.User{}
 	result := database.Database.Db.Where("email = ?", user.Email).First(&existingUser)
 	if result.RowsAffected > 0 {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"status":  false,
-			"message": "Email is already registered!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusConflict, false, "Email is already registered!", nil)
 	}
 
 	// Check if mobile already exists
 	existingUserByMobile := models.User{}
 	result = database.Database.Db.Where("mobile = ?", user.Mobile).First(&existingUserByMobile)
 	if result.RowsAffected > 0 {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"status":  false,
-			"message": "Mobile number is already registered!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusConflict, false, "Mobile number is already registered!", nil)
 	}
 
 	user.ReferralCode = generateReferralCode()
@@ -85,29 +76,19 @@ func Signup(c *fiber.Ctx) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  false,
-			"message": "Failed to process your request!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to process your request!", nil)
 	}
 	user.Password = string(hashedPassword)
 
 	if err := database.Database.Db.Create(user).Error; err != nil {
 		log.Printf("Error saving user to database: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  false,
-			"message": "Failed to Signup user!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to Signup user!", nil)
 	}
 
 	user.Password = ""
 	user.UserKYC = models.UserKYC{}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"status":  true,
-		"message": "User registered successfully.",
-		"user":    user,
-	})
+	return middleware.JsonResponse(c, fiber.StatusCreated, true, "User registered successfully.", user)
 }
 
 func Login(c *fiber.Ctx) error {
@@ -116,30 +97,23 @@ func Login(c *fiber.Ctx) error {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	})
+
 	if err := c.BodyParser(reqData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  false,
-			"message": "Failed to parse request body!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Failed to parse request body!", nil)
 	}
 
 	if reqData.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  false,
-			"message": "Password is required!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Password is required!", nil)
 	}
 
 	if reqData.Email == "" && reqData.Mobile == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  false,
-			"message": "Either email or mobile number is required!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Either email or mobile number is required!", nil)
 	}
 
 	var user models.User
 	var result *gorm.DB
 
+	// Retrieve user by email or mobile
 	if reqData.Email != "" {
 		result = database.Database.Db.Where("email = ? AND is_deleted = ?", reqData.Email, false).First(&user)
 	} else {
@@ -147,56 +121,39 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	if result.Error != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"status":  false,
-			"message": "Invalid credentials!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid credentials!", nil)
 	}
 
 	if !user.IsEmailVerified {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"status":  false,
-			"message": "Email not verified!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Email not verified!", nil)
 	}
 
 	if !user.IsMobileVerified {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"status":  false,
-			"message": "Mobile not verified!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Mobile not verified!", nil)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(reqData.Password)); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"status":  false,
-			"message": "Wrong password!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Wrong password!", nil)
 	}
 
+	// Update last login time
 	user.LastLogin = time.Now()
 	if err := database.Database.Db.Save(&user).Error; err != nil {
 		log.Printf("Error saving last login time: %v", err)
 	}
 
-	sanitizedUserData := user
-	sanitizedUserData.Password = ""
-	sanitizedUserData.ProfileImage = ""
+	// Sanitize user data (remove sensitive fields)
+	user.Password = ""
+	user.ProfileImage = ""
 
+	// Generate JWT token
 	token, err := middleware.GenerateJWT(user.ID, user.Name, user.Role)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  false,
-			"message": "Error generating JWT token!",
-		})
+		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Error generating JWT token!", nil)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  true,
-		"message": "Login successful.",
-		"data": fiber.Map{
-			"user":  sanitizedUserData,
-			"token": token,
-		},
+	return middleware.JsonResponse(c, fiber.StatusOK, true, "Login successful.", fiber.Map{
+		"user":  user,
+		"token": token,
 	})
 }
