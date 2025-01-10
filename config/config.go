@@ -10,10 +10,15 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Port      string
-	DBName    string
-	JWTKey    string
-	SaltRound int // Updated to int for SaltRound
+	Port               string
+	DBName             string
+	JWTKey             string
+	SaltRound          int // Updated to int for SaltRound
+	LocalTextApi       string
+	LocalTextApiUrl    string
+	SendgridApiKey     string
+	SendgridSenderMail string
+	SandgridSenderName string
 }
 
 // AppConfig is a global variable to access configuration
@@ -28,10 +33,15 @@ func LoadConfig() {
 
 	// Initialize AppConfig with values from environment variables
 	AppConfig = &Config{
-		Port:      getEnv("PORT", "3000"),
-		DBName:    getEnv("DB_NAME", "credUser.db"),
-		JWTKey:    getEnv("JWT_SECRET_KEY", "defaultSecret"),
-		SaltRound: getEnvInt("SALT_ROUND", 10), // Parse as integer for SaltRound
+		Port:               getEnv("PORT", "3000"),
+		DBName:             getEnv("DB_NAME", "credUser.db"),
+		JWTKey:             getEnv("JWT_SECRET_KEY", "defaultSecret"),
+		SaltRound:          getEnvInt("SALT_ROUND", 10), // Parse as integer for SaltRound
+		LocalTextApi:       getEnv("LOCAL_SMS_API_KEY", "defaultSecret"),
+		LocalTextApiUrl:    getEnv("LOCAL_SMS_API_URL", "defaultSecret"),
+		SendgridApiKey:     getEnv("SENDGRID_API_KEY", "defaultSecret"),
+		SendgridSenderMail: getEnv("SENDGRID_MAIL_FROM", "defaultSecret"),
+		SandgridSenderName: getEnv("SENDGRID_MAIL_NAME", "defaultSecret"),
 	}
 
 	// Validate critical configuration

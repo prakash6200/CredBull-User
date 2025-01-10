@@ -170,7 +170,7 @@ func SendOTP(c *fiber.Ctx) error {
 	if reqData.Email != "" {
 		result = database.Database.Db.Where("email = ? AND is_deleted = ?", reqData.Email, false).First(&user)
 		if result.Error != nil {
-			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid email credentials!", nil)
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid email!", nil)
 		}
 		if user.IsEmailVerified {
 			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Email already verified!", nil)
@@ -178,7 +178,7 @@ func SendOTP(c *fiber.Ctx) error {
 	} else {
 		result = database.Database.Db.Where("mobile = ? AND is_deleted = ?", reqData.Mobile, false).First(&user)
 		if result.Error != nil {
-			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid mobile credentials!", nil)
+			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Invalid mobile!", nil)
 		}
 		if user.IsMobileVerified {
 			return middleware.JsonResponse(c, fiber.StatusUnauthorized, false, "Mobile already verified!", nil)
@@ -199,6 +199,20 @@ func SendOTP(c *fiber.Ctx) error {
 		Code:        otp,
 		ExpiresAt:   expiresAt,
 		Description: "Email/Mobile Verification OTP",
+	}
+
+	// Send OTP via SMS if mobile is provided
+	if reqData.Mobile != "" {
+		if err := utils.SendOTPToMobile(reqData.Mobile, otp); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to send OTP to mobile!", nil)
+		}
+	}
+
+	// Send OTP via email if email is provided
+	if reqData.Email != "" {
+		if err := utils.SendOTPEmail(otp, reqData.Email); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to send OTP to email!", nil)
+		}
 	}
 
 	// Save OTP record to the database
