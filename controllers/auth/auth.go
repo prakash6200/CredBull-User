@@ -334,6 +334,20 @@ func ForgotPasswordSendOTP(c *fiber.Ctx) error {
 		Description: "Forgot Password OTP",
 	}
 
+	// Send OTP via SMS if mobile is provided
+	if reqData.Mobile != "" {
+		if err := utils.SendOTPToMobile(reqData.Mobile, otp); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to send OTP to mobile!", nil)
+		}
+	}
+
+	// Send OTP via email if email is provided
+	if reqData.Email != "" {
+		if err := utils.SendOTPEmail(otp, reqData.Email); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to send OTP to email!", nil)
+		}
+	}
+
 	// Save OTP record to the database
 	if err := database.Database.Db.Create(&otpRecord).Error; err != nil {
 		return middleware.JsonResponse(c, fiber.StatusInternalServerError, false, "Failed to Create OTP!", nil)
