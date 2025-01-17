@@ -1,4 +1,4 @@
-package validator
+package authValidator
 
 import (
 	"fib/middleware"

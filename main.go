@@ -3,7 +3,8 @@ package main
 import (
 	"fib/config"
 	"fib/database"
-	routers "fib/routers/userRoutes"
+	authRoutes "fib/routers/authRoutes"
+	userProfileRoutes "fib/routers/userRoutes"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -31,7 +32,8 @@ func main() {
 	// Serve static files from the public folder
 	app.Static("/", "./public")
 
-	routers.SetupUserRoutes(app)
+	authRoutes.SetupAuthRoutes(app)
+	userProfileRoutes.SetupUserRoutes(app)
 
 	log.Printf("Server is running on port %s", config.AppConfig.Port)
 	log.Fatal(app.Listen(":" + config.AppConfig.Port))
