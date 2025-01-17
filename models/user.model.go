@@ -8,17 +8,17 @@ import (
 
 type User struct {
 	gorm.Model
-	ReferralCode     string        `gorm:"unique;not null"` // For referral
-	ProfileImage     string        `gorm:"default:''"`
-	Name             string        `gorm:"default:''"`
-	Email            string        `gorm:"unique;not null"`
-	Mobile           string        `gorm:"default:''"`
-	Role             string        `gorm:"default:'USER'"` // Default role is USER
-	Password         string        `gorm:"not null"`
-	BankDetails      []BankDetails `gorm:"foreignKey:UserID"` // Corrected foreign key reference
-	UserKYC          UserKYC       `gorm:"foreignKey:UserID"` // Corrected foreign key reference
-	IsMobileVerified bool          `gorm:"default:false"`
-	IsEmailVerified  bool          `gorm:"default:false"`
-	IsDeleted        bool          `gorm:"default:false"`
-	LastLogin        time.Time     `gorm:"default:NULL"`
+	ReferralCode     string    `gorm:"unique;not null"` // For referral
+	ProfileImage     string    `gorm:"default:''"`
+	Name             string    `gorm:"default:''"`
+	Email            string    `gorm:"unique;not null"`
+	Mobile           string    `gorm:"default:''"`
+	Role             string    `gorm:"default:'USER'"` // Default role is USER
+	Password         string    `gorm:"not null"`
+	BankDetails      uint      `gorm:"foreignKey:BankID"` // Corrected foreign key reference
+	UserKYC          uint      `gorm:"foreignKey:KycID"`  // Corrected foreign key reference
+	IsMobileVerified bool      `gorm:"default:false"`
+	IsEmailVerified  bool      `gorm:"default:false"`
+	IsDeleted        bool      `gorm:"default:false"`
+	LastLogin        time.Time `gorm:"default:NULL"`
 }

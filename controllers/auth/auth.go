@@ -89,7 +89,6 @@ func Signup(c *fiber.Ctx) error {
 	}
 
 	user.Password = ""
-	user.UserKYC = models.UserKYC{}
 
 	return middleware.JsonResponse(c, fiber.StatusCreated, true, "User registered successfully.", user)
 }
