@@ -79,3 +79,31 @@ func AddBankAccount() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func SendAdharOtp() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Parse request body
+		reqData := new(struct {
+			AadharNumber string `json:"aadharNumber"`
+		})
+		if err := c.BodyParser(reqData); err != nil {
+			return middleware.JsonResponse(c, fiber.StatusBadRequest, false, "Invalid request body!", nil)
+		}
+
+		errors := make(map[string]string)
+
+		// Validate Aadhar number
+		if len(strings.TrimSpace(reqData.AadharNumber)) != 12 {
+			errors["adharNumber"] = "Invalid Aadhar number! It must be 12 digits long."
+		}
+
+		// Respond with errors if any exist
+		if len(errors) > 0 {
+			return middleware.ValidationErrorResponse(c, errors)
+		}
+
+		// Pass validated bank details to the next middleware
+		c.Locals("validatedBankDetails", reqData)
+		return c.Next()
+	}
+}

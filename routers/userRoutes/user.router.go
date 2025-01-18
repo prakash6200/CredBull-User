@@ -12,4 +12,5 @@ func SetupUserRoutes(app *fiber.App) {
 	userGroup := app.Group("/user")
 
 	userGroup.Post("/add/bank/account", userPorfileValidator.AddBankAccount(), middleware.JWTMiddleware, userProfileController.AddBankAccount)
+	userGroup.Post("/send/adhar/otp", userPorfileValidator.SendAdharOtp(), middleware.JWTMiddleware, userProfileController.SendAdharOtp)
 }
