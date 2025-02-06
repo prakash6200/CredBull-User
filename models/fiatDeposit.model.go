@@ -25,13 +25,13 @@ const (
 	UPI  BankPaymentType = "UPI"
 )
 
-type DepositFiat struct {
+type FiatDeposit struct {
 	gorm.Model
-	UserID          string          `gorm:"not null" json:"user_id"`
+	UserID          string          `gorm:"not null;index" json:"user_id"`
 	Amount          float64         `gorm:"default:0" json:"fiat_amount"`
-	Currency        string          `json:"currency"`
-	TransactionID   string          `json:"transaction_id"`
-	Status          Status          `gorm:"type:varchar(20);default:'pending';check:status IN ('pending', 'approved', 'rejected', 'processing')" json:"status"`
+	Currency        string          `gorm:"type:varchar(3);not null" json:"currency"` // ISO 4217 currency code (e.g., USD, INR)
+	TransactionID   string          `gorm:"index" json:"transaction_id"`
+	Status          Status          `gorm:"type:varchar(20);default:'pending';index;check:status IN ('pending', 'approved', 'rejected', 'processing')" json:"status"`
 	BankPaymentType BankPaymentType `gorm:"type:varchar(10);check:bank_payment_type IN ('NEFT', 'IMPS', 'UPI')" json:"bank_payment_type"`
 	Image           string          `gorm:"default:''" json:"image"`
 	ApprovedBy      string          `json:"approved_by"`

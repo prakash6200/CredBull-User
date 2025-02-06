@@ -8,7 +8,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	// "gorm.io/gorm/logger"
 )
 
 // DbInstance struct holds the database connection instance
@@ -34,7 +34,7 @@ func ConnectDb() {
 	log.Printf("Connected Successfully to Database: %s\n", dbName)
 
 	// Set GORM logger to Info mode
-	db.Logger = logger.Default.LogMode(logger.Info)
+	// db.Logger = logger.Default.LogMode(logger.Info)
 
 	// Run database migrations
 	runMigrations(db)
@@ -49,7 +49,8 @@ func ConnectDb() {
 func runMigrations(db *gorm.DB) {
 	log.Println("Running Migrations")
 	if err := db.AutoMigrate(&models.User{}, &models.BankDetails{},
-		&models.UserKYC{}, &models.OTP{}, &models.LoginTracking{}); err != nil {
+		&models.UserKYC{}, &models.OTP{}, &models.LoginTracking{}, &models.FiatDeposit{},
+		&models.CryptoDeposit{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 }
