@@ -1,4 +1,4 @@
-package userPorfileValidator
+package userController
 
 import (
 	"fib/middleware"

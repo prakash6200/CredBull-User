@@ -19,10 +19,10 @@ type User struct {
 	UserKYC             uint       `gorm:"foreignKey:KycID"`  // Corrected foreign key reference
 	IsMobileVerified    bool       `gorm:"default:false"`
 	IsEmailVerified     bool       `gorm:"default:false"`
-	IsDeleted           bool       `gorm:"default:false"`
 	LastLogin           time.Time  `gorm:"default:NULL"`
 	FailedLoginAttempts int        `gorm:"default:0"`
 	LastFailedLogin     *time.Time `json:"last_failed_login"`
 	IsBlocked           bool       `gorm:"default:false"`
 	BlockedUntil        *time.Time `json:"blocked_until"`
+	IsDeleted           bool       `gorm:"default:false"`
 }

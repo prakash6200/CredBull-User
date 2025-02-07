@@ -22,4 +22,5 @@ type CryptoDeposit struct {
 	BlockNo       float64    `gorm:"not null" json:"block_number"`
 	ConfirmedAt   *time.Time `json:"confirmed_at"`
 	Description   string     `json:"description"`
+	IsDeleted     bool       `gorm:"default:false"`
 }

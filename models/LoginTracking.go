@@ -12,4 +12,5 @@ type LoginTracking struct {
 	IPAddress string    `json:"ip_address"`
 	Device    string    `json:"device"`
 	Timestamp time.Time `json:"timestamp"`
+	IsDeleted bool      `gorm:"default:false"`
 }

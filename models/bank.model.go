@@ -14,6 +14,6 @@ type BankDetails struct {
 	BranchName  string `gorm:"default:''"`
 	AccountType string `gorm:"type:text;default:'savings'"`
 	UserID      uint   `gorm:"foreignKey:UserID"`
-	IsDeleted   bool   `gorm:"default:false"`
 	Image       string `gorm:"default:''"`
+	IsDeleted   bool   `gorm:"default:false"`
 }

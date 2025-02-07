@@ -1,4 +1,4 @@
-package userProfileController
+package userController
 
 import (
 	"encoding/json"

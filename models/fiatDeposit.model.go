@@ -37,4 +37,5 @@ type FiatDeposit struct {
 	ApprovedBy      string          `json:"approved_by"`
 	Description     string          `json:"description"`
 	AdminActionDate *time.Time      `json:"admin_action_date"`
+	IsDeleted       bool            `gorm:"default:false"`
 }
